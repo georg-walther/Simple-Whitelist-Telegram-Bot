@@ -26,7 +26,7 @@
 
 '''
 Attention!
-This code is only to blacklist toxic people from ur group/groups.
+This code is to whitelist genuine people from ur group/groups.
 
 If u need help, dm me on telegram and i will help u.
 '''
@@ -53,13 +53,13 @@ api_key = "" # paste your bot token given from @BotFather
 with Client("my_account", api_id, api_hash, api_key) as app:
     pass
 
-# this variable is needed to execute the commands: /block and /unblock
+# this variable is needed to execute the commands: /block and /let
 owner = [1234] # put your account telegram id here.
 
-# define user target for /block and /unblock commands
+# define user target for /block and /let commands
 target = app.get_users(message.command[1])
 
-# when a user join in the group, the bot examine if a user is on the database, if yes, the user will be banned.
+# when a user join in the group, the bot examine if a user is on the database, if no, the user will be banned.
 @app.on_message(filters.new_chat_members & filters.group)
 def blacklist(client, message):
     # opening database (if u don't have created the database yet, u need to create one. (table name: "users", column name: "id", type: "TEXT".)
@@ -68,30 +68,30 @@ def blacklist(client, message):
     # define cursor to edit the database
     cursor = database.cursor()
 
-    # check if the user is on the database's blacklist.
+    # check if the user is on the database's whitelist.
     cursor.execute("""SELECT id
                                    FROM users
                                    WHERE id=?""",
                    (message.from_user.id,))
 
-    result = cursor.fetchone()
+    result = cursor.fetchone()unblock
     if result:
+         pass
+    else:
         app.kick_chat_member(message.chat.id, message.from_user.id)
         message.reply(
-            f"<b>{message.from_user.first_name}</b> is on blacklist because its defined as dangerous, i have banned him.")
-    else:
-        pass
+            f"<b>{message.from_user.first_name}</b> is not on whitelist, i have therefore banned him.")
 
     # save database's edit
     database.commit()
     # close the database
     database.close()
 
-#command to add a user in blacklist (/block @username)
-@app.on_message(filters.command("block"))
-def block_command(client, message):
+#command to add a user in whitelist (/let @username)
+@app.on_message(filters.command("let"))
+def let_command (client, message):
     if message.user.id in owner:
-        database = sqlite3.connect("blacklist.db")
+        database = sqlite3.connect("whitelist.db")
 
         cursor = database.cursor()
 
@@ -103,22 +103,22 @@ def block_command(client, message):
         result = cursor.fetchone()
 
         if result:
-            message.reply(f"{target.first_name} is already on the blacklist.")
+            message.reply(f"{target.first_name} is already on the whitelist.")
         else:
             # remove this comment if u want use SimpleBlacklist on single group   app.kick_chat_member(message.chat.id, message.command[1], int(time.time() + 604800)) # ban target for 1 week from group
             cursor.execute("INSERT INTO utenti VALUES (?)", (target.id,))
-            message.reply(f"{target.first_name} is added on blacklist.")
+            message.reply(f"{target.first_name} is added on whitelist.")
             database.commit()
             database.close()
     else:
         message.reply("Permission denied.")
 
 
-# command to remove a user from blacklist (/unblock @username)
-@app.on_message(filters.command("unblock"))
-def unblock_command(client, message):
+# command to remove a user from whitelist (/block @username)
+@app.on_message(filters.command("block"))
+def block_command(client, message):
 
-    database = sqlite3.connect("blacklist.db")
+    database = sqlite3.connect("whitelist.db")
 
     cursor = database.cursor()
 
@@ -128,13 +128,14 @@ def unblock_command(client, message):
                    (target.id,))
     result = cursor.fetchone()
     if result:
-        cursor.execute("""DELETE FROM utenti WHERE id = ?""", (target.id,)) # remove the old blacklisted person from database.
+        cursor.execute("""DELETE FROM utenti WHERE id = ?""", (target.id,)) # remove the old whitelisted person from database.
         # remove this comment if u want use SimpleBlacklist in a single group app.unban_chat_member(message.chat.id, target.id) # unban the user from group
-        message.reply(f"{target.first_name} has correctly removed from blacklist.")
+        message.reply(f"{target.first_name} has correctly removed from whitelist.")
         database.commit()
         database.close()
+      
     else:
-        message.reply(f"{target.first_name} not exists on database's blacklist.")
+        message.reply(f"{target.first_name} not exists on database's whitelist.")
 
 
 
